@@ -6,6 +6,7 @@ const list = [
 ]
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
+    console.log(process.env.MONGODB_USERNAME, process.env.NODE_ENV)
     const item = req.body.trim()
     switch (req.method) {
         case 'GET':
