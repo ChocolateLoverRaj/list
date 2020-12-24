@@ -22,7 +22,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
             }
             list.push(item)
             // Extra delay
-            await new Promise(resolve => {
+            await new Promise<void>(resolve => {
                 setTimeout(() => {
                     resolve()
                 }, 2000)

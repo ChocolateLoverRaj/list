@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
         "esnext"
-    ]
+    ],
+    "typescript.tsdk": "c:\\Users\\Jui\\Documents\\GitHub\\vercel-app\\node_modules\\typescript\\lib"
 }
