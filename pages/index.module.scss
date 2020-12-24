@@ -1,0 +1,19 @@
+.synced {
+    color: green;
+}
+
+.notSynced {
+    color: orange;
+}
+
+.item {
+    display: flex;
+
+    .button {
+        cursor: pointer;
+    }
+    
+    .disabled {
+        cursor: wait;
+    }
+}
