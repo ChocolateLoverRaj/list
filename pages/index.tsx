@@ -67,7 +67,7 @@ function App() {
         <Head key="head">
             <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
         </Head>
-        <h1 key="hi">Hi</h1>
+        <h1 key="hi">List</h1>
         <ul children={list.map(({ item, status }, index) =>
             <li key={index} className={status !== Statuses.ADDING ? styles.synced : styles.notSynced}>
                 <div className={styles.item}>
