@@ -1,129 +1,178 @@
-import styles from './index.module.scss'
-import { useEffect, useState } from 'react'
+import { FC, useEffect } from 'react'
+import { List, Input, Button, Form, Result, FormProps, Spin, Tooltip, Alert, Menu } from 'antd'
 import Head from 'next/head'
-import cn from 'classnames'
+import { PlusOutlined, DeleteOutlined, SyncOutlined, CloseCircleOutlined, GithubOutlined } from '@ant-design/icons'
+import usePromise from 'react-use-promise'
+import axios from 'axios'
+import { useSetAsState } from 'use-set-as-state'
+import { useMapState } from 'rooks'
+import packageJson from '../package.json'
 
-enum Statuses {
-    SYNCED = 0,
-    ADDING = 1,
-    DELETING = 2
-}
+const IndexPage: FC = () => {
+  const [initialItems, error] = usePromise<string[]>(async () => (await axios('/api/list')).data, [])
+  const items = useSetAsState(new Set<string>())
+  useEffect(() => initialItems?.forEach(item => items.add(item)), [initialItems])
+  const deletePromises = useMapState<string, Promise<void>>(new Map())
+  const deleteErrors = useMapState<string, Error>(new Map())
+  useEffect(() => {
+    [...deletePromises].forEach(([item, addPromise]) => {
+      addPromise
+        .then(() => items.delete(item), e => deleteErrors.set(item, e))
+        .finally(() => deletePromises.delete(item))
+    })
+  }, [deletePromises, deleteErrors, items])
+  const [form] = Form.useForm()
 
-interface BaseItem {
-    item: string
-}
-interface SyncedItem {
-    status: Statuses.SYNCED
-}
-interface PendingItem {
-    status: Statuses.ADDING | Statuses.DELETING,
-    request: Promise<Response>
-}
+  useEffect(console.log.bind(error), [error])
 
-type Item = BaseItem & (SyncedItem | PendingItem)
+  const handleDelete = (item: string): void => deletePromises.set(item, axios.delete('/api/list', { params: { item } }))
+  const addPromises = useMapState<string, Promise<void>>(new Map())
+  const addErrors = useMapState<string, Error>(new Map())
+  useEffect(() => {
+    [...addPromises].forEach(([item, addPromise]) => {
+      addPromise.then(() => {
+        addPromises.delete(item)
+        items.add(item)
+      }, e => {
+        addPromises.delete(item)
+        addErrors.set(item, e)
+      })
+    })
+  }, [addPromises])
 
-function App() {
-    const [list, setList] = useState<Array<Item>>([])
-    const [newItem, setNewItem] = useState('')
-    useEffect(() => {
-        fetch('/api/list')
-            .then(res => res.json())
-            .then(res => {
-                setList(res.map((item: string): Item => ({
-                    item,
-                    status: Statuses.SYNCED
-                })))
-            })
-    }, [])
-    useEffect(() => {
-        let cancelled = false
-        list.forEach(item => {
-            if (item.status !== Statuses.SYNCED) {
-                item.request.then(() => {
-                    if (cancelled) {
-                        return
+  const handleAdd = (item: string): void => {
+    addErrors.delete(item)
+    addPromises.set(item, axios.post('/api/list', item, {
+      headers: { 'Content-Type': 'text/plain' }
+    }))
+  }
+
+  const handleFinish: FormProps['onFinish'] = ({ item }) => {
+    form.setFieldsValue({ item: '' })
+    handleAdd(item)
+  }
+
+  const handleAddCancel = (item: string): void => addErrors.delete(item)
+  const handleDeleteCancel = (item: string): void => deleteErrors.delete(item)
+
+  return (
+    <>
+      <Head>
+        <title>Next.js List</title>
+      </Head>
+      <Menu>
+        <Menu.Item key='GitHub' icon={<GithubOutlined />}>
+          <a href={packageJson.homepage}>GitHub</a>
+        </Menu.Item>
+      </Menu>
+      {error === undefined
+        ? (
+          <>
+            <List
+              header={<h1>List</h1>}
+              dataSource={[...items, ...addPromises.keys(), ...addErrors.keys()]}
+              loading={initialItems === undefined && { tip: 'Loading Items' }}
+              renderItem={item =>
+                <Spin tip='Deleting Item' spinning={deletePromises.has(item)} key={item}>
+                  {addPromises.has(item) || addErrors.has(item)
+                    ? (
+                      <List.Item
+                        extra={
+                          addPromises.has(item)
+                            ? <Tooltip title='Adding Item'><SyncOutlined spin /></Tooltip>
+                            : <Alert
+                                showIcon
+                                type='error'
+                                message='Error Adding Item'
+                                icon={<CloseCircleOutlined />}
+                                closable
+                                onClose={handleAddCancel.bind(undefined, item)}
+                                action={
+                                  <Button
+                                    type='text'
+                                    size='small'
+                                    onClick={handleAdd.bind(undefined, item)}
+                                  >
+                                    Retry
+                                  </Button>
+                                }
+                              />
+                        }
+                      >
+                        {item}
+                      </List.Item>)
+                    : (
+                      <List.Item
+                        actions={!deleteErrors.has(item)
+                          ? [
+                            <Button
+                              disabled={deletePromises.has(item)}
+                              key='delete'
+                              icon={<DeleteOutlined />}
+                              danger
+                              onClick={() => handleDelete(item)}
+                            />
+                            ]
+                          : undefined}
+                        extra={deleteErrors.has(item)
+                          ? <Alert
+                              showIcon
+                              type='error'
+                              message='Error Deleting Item'
+                              icon={<CloseCircleOutlined />}
+                              closable
+                              onClose={handleDeleteCancel.bind(undefined, item)}
+                              action={
+                                <Button
+                                  type='text'
+                                  size='small'
+                                  onClick={handleDelete.bind(undefined, item)}
+                                >
+                                  Retry
+                                </Button>
+                          }
+                            />
+                          : undefined}
+                      >
+                        {item}
+                      </List.Item>)}
+                </Spin>}
+              bordered
+            />
+            <Form layout='inline' onFinish={handleFinish} form={form}>
+              <Form.Item
+                name='item'
+                rules={[
+                  { required: true },
+                  {
+                    validator: async (_, value: string) => {
+                      const item = value.trim()
+                      if (items.has(item)) throw new Error('That item is already in the list')
+                      if (addPromises.has(item)) {
+                        throw new Error('That item is already being added to the list')
+                      }
                     }
-                    setList(item.status === Statuses.ADDING
-                        ? list.map(currentItem => {
-                            if (currentItem.item === item.item) {
-                                return {
-                                    item: currentItem.item,
-                                    status: Statuses.SYNCED
-                                }
-                            } else {
-                                return { ...currentItem }
-                            }
-                        })
-                        : list.filter(({ item: currentItem }) => currentItem !== item.item)
-                    )
-                })
-            }
-        })
-        return () => {
-            cancelled = true
-        }
-    }, [list])
-    return <>
-        <Head key="head">
-            <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-        </Head>
-        <h1 key="hi">List</h1>
-        <ul children={list.map(({ item, status }, index) =>
-            <li key={index} className={status !== Statuses.ADDING ? styles.synced : styles.notSynced}>
-                <div className={styles.item}>
-                    {item}
-                    {status !== Statuses.ADDING && <i className={cn(
-                        "material-icons",
-                        status === Statuses.SYNCED
-                            ? styles.button
-                            : styles.disabled,
-                        status === Statuses.SYNCED
-                            ? styles.synced
-                            : styles.notSynced
-                    )} onClick={status === Statuses.SYNCED
-                        ? (() => {
-                            setList(list.map(currentItem => {
-                                if (currentItem.item === item) {
-                                    return {
-                                        item,
-                                        status: Statuses.DELETING,
-                                        request: fetch('/api/list', { method: 'DELETE', body: item })
-                                    }
-                                } else {
-                                    return { ...currentItem }
-                                }
-                            }))
-                        })
-                        : undefined
-                    }>delete</i>}
-                </div>
-            </li>)} />
-        <form onSubmit={e => {
-            e.preventDefault()
-            setList([
-                ...list,
-                {
-                    item: newItem,
-                    status: Statuses.ADDING,
-                    request: fetch('/api/list', { method: 'POST', body: newItem })
-                }
-            ])
-            setNewItem('')
-        }}>
-            <input key="input" required value={newItem} onChange={e => {
-                const value = e.target.value
-                setNewItem(value)
-                if (list.find(({ item }) => {
-                    return item === value
-                }) === undefined) {
-                    e.target.setCustomValidity('')
-                } else {
-                    e.target.setCustomValidity('Items in the list must be unique.')
-                }
-            }} />
-            <button key="button">Add Item</button>
-        </form>
+                  }
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  icon={<PlusOutlined />}
+                  htmlType='submit'
+                  type='primary'
+                  disabled={initialItems === undefined}
+                >
+                  Add Item
+                </Button>
+              </Form.Item>
+            </Form>
+          </>
+          )
+        : <Result status='error' title='Error Loading Items' />}
     </>
+  )
 }
 
-export default App
+export default IndexPage
