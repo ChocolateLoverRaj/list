@@ -10,9 +10,13 @@
         "axios": "^0.21.1",
         "immer": "^9.0.5",
         "mongodb": "4",
+        "never": "^1.0.3",
         "next": "^11.0.1",
+        "pusher": "^5.0.0",
+        "pusher-js": "^7.0.3",
         "react": "^17.0.2",
         "react-dom": "^17.0.2",
+        "react-pulse-dot": "^2.0.0",
         "react-use-promise": "^0.3.1",
         "rooks": "github:ChocolateLoverRaj/rooks#build/preview-531",
         "use-set-as-state": "^1.1.0"

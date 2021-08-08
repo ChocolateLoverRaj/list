@@ -16,9 +16,13 @@ specifiers:
   eslint-plugin-react: ^7.24.0
   immer: ^9.0.5
   mongodb: '4'
+  never: ^1.0.3
   next: ^11.0.1
+  pusher: ^5.0.0
+  pusher-js: ^7.0.3
   react: ^17.0.2
   react-dom: ^17.0.2
+  react-pulse-dot: ^2.0.0
   react-use-promise: ^0.3.1
   rooks: github:ChocolateLoverRaj/rooks#build/preview-531
   typescript: ^4.3.5
@@ -30,9 +34,13 @@ dependencies:
   axios: 0.21.1
   immer: 9.0.5
   mongodb: 4.1.0
+  never: 1.0.3
   next: 11.0.1_f31b35bdaa3b7c2fce82404f09d2dac4
+  pusher: 5.0.0
+  pusher-js: 7.0.3
   react: 17.0.2
   react-dom: 17.0.2_react@17.0.2
+  react-pulse-dot: 2.0.0_react@17.0.2
   react-use-promise: 0.3.1_react@17.0.2
   rooks: github.com/ChocolateLoverRaj/rooks/2584eca87253b3b6bbaa096c2b63a9feeb4e2165_react-dom@17.0.2+react@17.0.2
   use-set-as-state: 1.1.0_immer@9.0.5+react@17.0.2
@@ -147,6 +155,39 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /@fortawesome/fontawesome-common-types/0.2.36:
+    resolution: {integrity: sha512-a/7BiSgobHAgBWeN7N0w+lAhInrGxksn13uK7231n2m8EDPE3BMCl9NZLTGrj9ZXfCmC6LM0QLqXidIizVQ6yg==}
+    engines: {node: '>=6'}
+    requiresBuild: true
+    dev: false
+
+  /@fortawesome/fontawesome-svg-core/1.2.36:
+    resolution: {integrity: sha512-YUcsLQKYb6DmaJjIHdDWpBIGCcyE/W+p/LMGvjQem55Mm2XWVAP5kWTMKWLv9lwpCVjpLxPyOMOyUocP1GxrtA==}
+    engines: {node: '>=6'}
+    requiresBuild: true
+    dependencies:
+      '@fortawesome/fontawesome-common-types': 0.2.36
+    dev: false
+
+  /@fortawesome/free-solid-svg-icons/5.15.4:
+    resolution: {integrity: sha512-JLmQfz6tdtwxoihXLg6lT78BorrFyCf59SAwBM6qV/0zXyVeDygJVb3fk+j5Qat+Yvcxp1buLTY5iDh1ZSAQ8w==}
+    engines: {node: '>=6'}
+    requiresBuild: true
+    dependencies:
+      '@fortawesome/fontawesome-common-types': 0.2.36
+    dev: false
+
+  /@fortawesome/react-fontawesome/0.1.15_f515edce028694561ceb456e3dba224c:
+    resolution: {integrity: sha512-/HFHdcoLESxxMkqZAcZ6RXDJ69pVApwdwRos/B2kiMWxDSAX2dFK8Er2/+rG+RsrzWB/dsAyjefLmemgmfE18g==}
+    peerDependencies:
+      '@fortawesome/fontawesome-svg-core': ^1.2.32
+      react: '>=16.x'
+    dependencies:
+      '@fortawesome/fontawesome-svg-core': 1.2.36
+      prop-types: 15.7.2
+      react: 17.0.2
+    dev: false
 
   /@hapi/accept/5.0.2:
     resolution: {integrity: sha512-CmzBx/bXUR8451fnZRuZAJRlzgm0Jgu5dltTX/bszmR2lheb9BpyN47Q1RbaGTsvFzn0PXAEs+lXDKfshccYZw==}
@@ -379,6 +420,13 @@ packages:
       '@typescript-eslint/types': 4.29.0
       eslint-visitor-keys: 2.1.0
     dev: true
+
+  /abort-controller/3.0.0:
+    resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
+    engines: {node: '>=6.5'}
+    dependencies:
+      event-target-shim: 5.0.1
+    dev: false
 
   /acorn-jsx/5.3.2_acorn@7.4.1:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -1422,6 +1470,11 @@ packages:
     engines: {node: '>= 0.6'}
     dev: false
 
+  /event-target-shim/5.0.1:
+    resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
+    engines: {node: '>=6'}
+    dev: false
+
   /events/3.3.0:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
@@ -1765,6 +1818,11 @@ packages:
   /is-arrayish/0.2.1:
     resolution: {integrity: sha1-d8mYQFJ6qOyxqLppe4BkWnqSap0=}
     dev: true
+
+  /is-base64/1.1.0:
+    resolution: {integrity: sha512-Nlhg7Z2dVC4/PTvIFkgVVNvPHSO2eR/Yd0XzhGiXCXEvWnptXlXa/clQ8aePPiMuxEGcWfzWbGw2Fe3d+Y3v1g==}
+    hasBin: true
+    dev: false
 
   /is-bigint/1.0.3:
     resolution: {integrity: sha512-ZU538ajmYJmzysE5yU4Y7uIrPQ2j704u+hXFiIPQExpqzzUbpe5jCPdTfmz7jXRxZdvjY3KZ3ZNenoXQovX+Dg==}
@@ -2135,6 +2193,11 @@ packages:
   /natural-compare/1.4.0:
     resolution: {integrity: sha1-Sr6/7tdUHywnrPspvbvRXI1bpPc=}
     dev: true
+
+  /never/1.0.3:
+    resolution: {integrity: sha512-nJne5st+rCDsEqqJ5K9dnGmYCjYuoiIxWBAQb5OVujDJ8Wr1GuEIffLON7QqBQMhmBsK0hQg5JE+Zwq+gEJfzw==}
+    engines: {node: '>=10.18.0 <11 || >=12.14.0 <13 || >=13.5.0'}
+    dev: false
 
   /next/11.0.1_f31b35bdaa3b7c2fce82404f09d2dac4:
     resolution: {integrity: sha512-yR7be7asNbvpVNpi6xxEg28wZ7Gqmj1nOt0sABH9qORmF3+pms2KZ7Cng33oK5nqPIzEEFJD0pp2PCe3/ueMIg==}
@@ -2579,6 +2642,23 @@ packages:
   /punycode/2.1.1:
     resolution: {integrity: sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==}
     engines: {node: '>=6'}
+
+  /pusher-js/7.0.3:
+    resolution: {integrity: sha512-HIfCvt00CAqgO4W0BrdpPsDcAwy51rB6DN0VMC+JeVRRbo8mn3XTeUeIFjmmlRLZLX8rPhUtLRo7vPag6b8GCw==}
+    dependencies:
+      tweetnacl: 1.0.3
+    dev: false
+
+  /pusher/5.0.0:
+    resolution: {integrity: sha512-YaSZHkukytHR9+lklJp4yefwfR4685kfS6pqrSDUxPj45Ga29lIgyN7Jcnsz+bN5WKwXaf2+4c/x/j3pzWIAkw==}
+    engines: {node: '>= 4.0.0'}
+    dependencies:
+      abort-controller: 3.0.0
+      is-base64: 1.1.0
+      node-fetch: 2.6.1
+      tweetnacl: 1.0.3
+      tweetnacl-util: 0.15.1
+    dev: false
 
   /querystring-es3/0.2.1:
     resolution: {integrity: sha1-nsYfeQSYdXB9aUFFlv2Qek1xHnM=}
@@ -3145,6 +3225,19 @@ packages:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
     dev: false
 
+  /react-pulse-dot/2.0.0_react@17.0.2:
+    resolution: {integrity: sha512-Gs54KJRNLDgVaHZFbGIdU19pULCPymryMzd+tXd1MJFWEGZH5krBE5azCQctPO6ee0IlFEYBNvfJ+IViL3z1nQ==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: ^17.0.0
+    dependencies:
+      '@fortawesome/fontawesome-svg-core': 1.2.36
+      '@fortawesome/free-solid-svg-icons': 5.15.4
+      '@fortawesome/react-fontawesome': 0.1.15_f515edce028694561ceb456e3dba224c
+      prop-types: 15.7.2
+      react: 17.0.2
+    dev: false
+
   /react-refresh/0.8.3:
     resolution: {integrity: sha512-X8jZHc7nCMjaCqoU+V2I0cOhNW+QMBwSUkeXnTi8IPe6zaRWfn60ZzvFDZqWPfmSJfjub7dDW1SP0jaHWLu/hg==}
     engines: {node: '>=0.10.0'}
@@ -3706,6 +3799,14 @@ packages:
 
   /tty-browserify/0.0.1:
     resolution: {integrity: sha512-C3TaO7K81YvjCgQH9Q1S3R3P3BtN3RIM8n+OvX4il1K1zgE8ZhI0op7kClgkxtutIE8hQrcrHBXvIheqKUUCxw==}
+    dev: false
+
+  /tweetnacl-util/0.15.1:
+    resolution: {integrity: sha512-RKJBIj8lySrShN4w6i/BonWp2Z/uxwC3h4y7xsRrpP59ZboCd0GpEVsOnMDYLMmKBpYhb5TgHzZXy7wTfYFBRw==}
+    dev: false
+
+  /tweetnacl/1.0.3:
+    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
     dev: false
 
   /type-check/0.4.0:

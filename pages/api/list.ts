@@ -1,5 +1,9 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { MongoClient, Db } from 'mongodb'
+import Pusher from 'pusher'
+import never from 'never'
+import Events from '../../lib/Events'
+import listChannel from '../../lib/listChannel'
 
 const db = process.env.NODE_ENV === 'production' ? 'production' : 'dev'
 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
@@ -19,6 +23,14 @@ interface Item {
   item: string
 }
 
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APP_ID ?? never(),
+  key: process.env.PUSHER_KEY ?? never(),
+  secret: process.env.PUSHER_SECRET ?? never(),
+  cluster: process.env.PUSHER_CLUSTER ?? never(),
+  useTLS: true
+})
+
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   const db = await getDb()
   const collection = db.collection('list')
@@ -37,6 +49,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     }
     const result = await collection.updateOne({ item }, { $setOnInsert: { item } }, { upsert: true })
     res.status(result.upsertedCount === 1 ? 201 : 409).end()
+    await pusher.trigger(listChannel, Events.POST.toString(), item)
   } else if (req.method === 'DELETE') {
     if (typeof req.query.item !== 'string') {
       res.status(400)
@@ -48,5 +61,6 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     }
     if ((await collection.deleteOne({ item })).deletedCount !== 1) res.status(404)
     res.end()
+    await pusher.trigger(listChannel, Events.DELETE.toString(), item)
   } else res.status(405).end()
 }

@@ -1,4 +1,4 @@
-import { FC, useEffect } from 'react'
+import { FC, useEffect, useState, useRef } from 'react'
 import { List, Input, Button, Form, Result, FormProps, Spin, Tooltip, Alert, Menu } from 'antd'
 import Head from 'next/head'
 import { PlusOutlined, DeleteOutlined, SyncOutlined, CloseCircleOutlined, GithubOutlined } from '@ant-design/icons'
@@ -7,10 +7,23 @@ import axios from 'axios'
 import { useSetAsState } from 'use-set-as-state'
 import { useMapState } from 'rooks'
 import packageJson from '../package.json'
+import listChannel from '../lib/listChannel'
+import Events from '../lib/Events'
+import { GetStaticProps } from 'next'
+import never from 'never'
+import PusherStatus from '../lib/PusherStatus'
+import Status from '../lib/Status'
 
-const IndexPage: FC = () => {
+export interface IndexPageProps {
+  pusherCluster: string
+  pusherAppKey: string
+}
+const IndexPage: FC<IndexPageProps> = props => {
+  const { pusherAppKey, pusherCluster } = props
+
   const [initialItems, error] = usePromise<string[]>(async () => (await axios('/api/list')).data, [])
   const items = useSetAsState(new Set<string>())
+  const itemsCurrent = useRef(items).current = items
   useEffect(() => initialItems?.forEach(item => items.add(item)), [initialItems])
   const deletePromises = useMapState<string, Promise<void>>(new Map())
   const deleteErrors = useMapState<string, Error>(new Map())
@@ -55,6 +68,51 @@ const IndexPage: FC = () => {
   const handleAddCancel = (item: string): void => addErrors.delete(item)
   const handleDeleteCancel = (item: string): void => deleteErrors.delete(item)
 
+  const [pusherStatus, setPusherStatus] = useState(PusherStatus.CONNECTING)
+  useEffect(() => {
+    let unsubscribe: boolean | Function = false
+    ;(async () => {
+      const Pusher = (await import('pusher-js/with-encryption')).default
+      const pusher = new Pusher(pusherAppKey, { cluster: pusherCluster })
+      const channel = pusher.subscribe(listChannel)
+      pusher.connection.bind('state_change', ({ current: state }: any) => {
+        let pusherStatus: PusherStatus
+        switch (state) {
+          case 'initialized':
+            pusherStatus = PusherStatus.CONNECTING
+            break
+          case 'connecting':
+            pusherStatus = PusherStatus.CONNECTING
+            break
+          case 'connected':
+            pusherStatus = PusherStatus.CONNECTED
+            break
+          case 'unavailable':
+            pusherStatus = PusherStatus.UNAVAILABLE
+            break
+          default:
+            pusherStatus = PusherStatus.FAILED
+        }
+        setPusherStatus(pusherStatus)
+      })
+      channel.bind(Events.POST.toString(), (item: string) => {
+        itemsCurrent.add(item)
+      })
+      channel.bind(Events.DELETE.toString(), (item: string) => {
+        itemsCurrent.delete(item)
+      })
+      const handleUnsubscribe = (): void => pusher.disconnect()
+      if (unsubscribe) handleUnsubscribe()
+      else unsubscribe = handleUnsubscribe
+    })().catch(e => {
+      console.error('Error', e)
+    })
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+      else unsubscribe = true
+    }
+  }, [])
+
   return (
     <>
       <Head>
@@ -69,7 +127,7 @@ const IndexPage: FC = () => {
         ? (
           <>
             <List
-              header={<h1>List</h1>}
+              header={<><h1>List</h1><Status status={pusherStatus} /></>}
               dataSource={[...items, ...addPromises.keys(), ...addErrors.keys()]}
               loading={initialItems === undefined && { tip: 'Loading Items' }}
               renderItem={item =>
@@ -176,3 +234,10 @@ const IndexPage: FC = () => {
 }
 
 export default IndexPage
+
+export const getStaticProps: GetStaticProps<IndexPageProps> = () => ({
+  props: {
+    pusherAppKey: process.env.PUSHER_KEY ?? never(),
+    pusherCluster: process.env.PUSHER_CLUSTER ?? never()
+  }
+})
