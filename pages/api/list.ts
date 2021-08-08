@@ -23,13 +23,14 @@ interface Item {
   item: string
 }
 
-const pusher = new Pusher({
+let _pusher: Pusher
+const getPusher = (): Pusher => _pusher ?? (_pusher = new Pusher({
   appId: process.env.PUSHER_APP_ID ?? never(),
   key: process.env.PUSHER_KEY ?? never(),
   secret: process.env.PUSHER_SECRET ?? never(),
   cluster: process.env.PUSHER_CLUSTER ?? never(),
   useTLS: true
-})
+}))
 
 export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> => {
   const db = await getDb()
@@ -49,7 +50,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     }
     const result = await collection.updateOne({ item }, { $setOnInsert: { item } }, { upsert: true })
     res.status(result.upsertedCount === 1 ? 201 : 409).end()
-    await pusher.trigger(listChannel, Events.POST.toString(), item)
+    await _pusher.trigger(listChannel, Events.POST.toString(), item)
   } else if (req.method === 'DELETE') {
     if (typeof req.query.item !== 'string') {
       res.status(400)
@@ -61,6 +62,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
     }
     if ((await collection.deleteOne({ item })).deletedCount !== 1) res.status(404)
     res.end()
+    const pusher = getPusher()
     await pusher.trigger(listChannel, Events.DELETE.toString(), item)
   } else res.status(405).end()
 }
