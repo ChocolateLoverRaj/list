@@ -49,8 +49,8 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       return
     }
     const result = await collection.updateOne({ item }, { $setOnInsert: { item } }, { upsert: true })
+    await getPusher().trigger(listChannel, Events.POST.toString(), item)
     res.status(result.upsertedCount === 1 ? 201 : 409).end()
-    await _pusher.trigger(listChannel, Events.POST.toString(), item)
   } else if (req.method === 'DELETE') {
     if (typeof req.query.item !== 'string') {
       res.status(400)
@@ -61,8 +61,7 @@ export default async (req: NextApiRequest, res: NextApiResponse): Promise<void> 
       res.status(400).end()
     }
     if ((await collection.deleteOne({ item })).deletedCount !== 1) res.status(404)
+    await getPusher().trigger(listChannel, Events.DELETE.toString(), item)
     res.end()
-    const pusher = getPusher()
-    await pusher.trigger(listChannel, Events.DELETE.toString(), item)
   } else res.status(405).end()
 }
