@@ -5,7 +5,11 @@ import never from 'never'
 import Events from '../../lib/Events'
 import listChannel from '../../lib/listChannel'
 
-const db = process.env.NODE_ENV === 'production' ? 'production' : 'dev'
+const db = process.env.NODE_ENV === 'production'
+  ? process.env.VERCEL_ENV === 'production'
+    ? 'production'
+    : 'preview'
+  : 'dev'
 // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 const uri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@${process.env.MONGODB_DOMAIN}.mongodb.net/${db}`
 let cachedDb: Db

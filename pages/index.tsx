@@ -23,35 +23,10 @@ const IndexPage: FC<IndexPageProps> = props => {
 
   const [initialItems, error] = usePromise<string[]>(async () => (await axios('/api/list')).data, [])
   const items = useSetAsState(new Set<string>())
-  const itemsCurrent = useRef(items).current = items
-  useEffect(() => initialItems?.forEach(item => items.add(item)), [initialItems])
-  const deletePromises = useMapState<string, Promise<void>>(new Map())
-  const deleteErrors = useMapState<string, Error>(new Map())
-  useEffect(() => {
-    [...deletePromises].forEach(([item, addPromise]) => {
-      addPromise
-        .then(() => items.delete(item), e => deleteErrors.set(item, e))
-        .finally(() => deletePromises.delete(item))
-    })
-  }, [deletePromises, deleteErrors, items])
-  const [form] = Form.useForm()
 
   useEffect(console.log.bind(error), [error])
 
   const handleDelete = (item: string): void => deletePromises.set(item, axios.delete('/api/list', { params: { item } }))
-  const addPromises = useMapState<string, Promise<void>>(new Map())
-  const addErrors = useMapState<string, Error>(new Map())
-  useEffect(() => {
-    [...addPromises].forEach(([item, addPromise]) => {
-      addPromise.then(() => {
-        addPromises.delete(item)
-        items.add(item)
-      }, e => {
-        addPromises.delete(item)
-        addErrors.set(item, e)
-      })
-    })
-  }, [addPromises])
 
   const handleAdd = (item: string): void => {
     addErrors.delete(item)
@@ -71,42 +46,42 @@ const IndexPage: FC<IndexPageProps> = props => {
   const [pusherStatus, setPusherStatus] = useState(PusherStatus.CONNECTING)
   useEffect(() => {
     let unsubscribe: boolean | Function = false
-    ;(async () => {
-      const Pusher = (await import('pusher-js/with-encryption')).default
-      const pusher = new Pusher(pusherAppKey, { cluster: pusherCluster })
-      const channel = pusher.subscribe(listChannel)
-      pusher.connection.bind('state_change', ({ current: state }: any) => {
-        let pusherStatus: PusherStatus
-        switch (state) {
-          case 'initialized':
-            pusherStatus = PusherStatus.CONNECTING
-            break
-          case 'connecting':
-            pusherStatus = PusherStatus.CONNECTING
-            break
-          case 'connected':
-            pusherStatus = PusherStatus.CONNECTED
-            break
-          case 'unavailable':
-            pusherStatus = PusherStatus.UNAVAILABLE
-            break
-          default:
-            pusherStatus = PusherStatus.FAILED
-        }
-        setPusherStatus(pusherStatus)
+      ; (async () => {
+        const Pusher = (await import('pusher-js/with-encryption')).default
+        const pusher = new Pusher(pusherAppKey, { cluster: pusherCluster })
+        const channel = pusher.subscribe(listChannel)
+        pusher.connection.bind('state_change', ({ current: state }: any) => {
+          let pusherStatus: PusherStatus
+          switch (state) {
+            case 'initialized':
+              pusherStatus = PusherStatus.CONNECTING
+              break
+            case 'connecting':
+              pusherStatus = PusherStatus.CONNECTING
+              break
+            case 'connected':
+              pusherStatus = PusherStatus.CONNECTED
+              break
+            case 'unavailable':
+              pusherStatus = PusherStatus.UNAVAILABLE
+              break
+            default:
+              pusherStatus = PusherStatus.FAILED
+          }
+          setPusherStatus(pusherStatus)
+        })
+        channel.bind(Events.POST.toString(), (item: string) => {
+          itemsCurrent.add(item)
+        })
+        channel.bind(Events.DELETE.toString(), (item: string) => {
+          itemsCurrent.delete(item)
+        })
+        const handleUnsubscribe = (): void => pusher.disconnect()
+        if (unsubscribe) handleUnsubscribe()
+        else unsubscribe = handleUnsubscribe
+      })().catch(e => {
+        console.error('Error', e)
       })
-      channel.bind(Events.POST.toString(), (item: string) => {
-        itemsCurrent.add(item)
-      })
-      channel.bind(Events.DELETE.toString(), (item: string) => {
-        itemsCurrent.delete(item)
-      })
-      const handleUnsubscribe = (): void => pusher.disconnect()
-      if (unsubscribe) handleUnsubscribe()
-      else unsubscribe = handleUnsubscribe
-    })().catch(e => {
-      console.error('Error', e)
-    })
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe()
       else unsubscribe = true
@@ -139,22 +114,22 @@ const IndexPage: FC<IndexPageProps> = props => {
                           addPromises.has(item)
                             ? <Tooltip title='Adding Item'><SyncOutlined spin /></Tooltip>
                             : <Alert
-                                showIcon
-                                type='error'
-                                message='Error Adding Item'
-                                icon={<CloseCircleOutlined />}
-                                closable
-                                onClose={handleAddCancel.bind(undefined, item)}
-                                action={
-                                  <Button
-                                    type='text'
-                                    size='small'
-                                    onClick={handleAdd.bind(undefined, item)}
-                                  >
-                                    Retry
-                                  </Button>
-                                }
-                              />
+                              showIcon
+                              type='error'
+                              message='Error Adding Item'
+                              icon={<CloseCircleOutlined />}
+                              closable
+                              onClose={handleAddCancel.bind(undefined, item)}
+                              action={
+                                <Button
+                                  type='text'
+                                  size='small'
+                                  onClick={handleAdd.bind(undefined, item)}
+                                >
+                                  Retry
+                                </Button>
+                              }
+                            />
                         }
                       >
                         {item}
@@ -170,26 +145,26 @@ const IndexPage: FC<IndexPageProps> = props => {
                               danger
                               onClick={() => handleDelete(item)}
                             />
-                            ]
+                          ]
                           : undefined}
                         extra={deleteErrors.has(item)
                           ? <Alert
-                              showIcon
-                              type='error'
-                              message='Error Deleting Item'
-                              icon={<CloseCircleOutlined />}
-                              closable
-                              onClose={handleDeleteCancel.bind(undefined, item)}
-                              action={
-                                <Button
-                                  type='text'
-                                  size='small'
-                                  onClick={handleDelete.bind(undefined, item)}
-                                >
-                                  Retry
-                                </Button>
-                          }
-                            />
+                            showIcon
+                            type='error'
+                            message='Error Deleting Item'
+                            icon={<CloseCircleOutlined />}
+                            closable
+                            onClose={handleDeleteCancel.bind(undefined, item)}
+                            action={
+                              <Button
+                                type='text'
+                                size='small'
+                                onClick={handleDelete.bind(undefined, item)}
+                              >
+                                Retry
+                              </Button>
+                            }
+                          />
                           : undefined}
                       >
                         {item}
@@ -227,7 +202,7 @@ const IndexPage: FC<IndexPageProps> = props => {
               </Form.Item>
             </Form>
           </>
-          )
+        )
         : <Result status='error' title='Error Loading Items' />}
     </>
   )
